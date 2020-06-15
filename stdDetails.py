@@ -20,7 +20,12 @@ def getData():
 def main():
     data = getData()
     print("data====---------->", data)
-    return render_template('index.html',value=data)
+    # data = {k.lower(): v for k, v in data.items()}
+    newData = []
+    for i in data:
+        newData.append({k.lower(): v for k, v in i.items()})
+    print("new--->",newData)
+    return render_template('index.html',value=newData)
 
 
 # @app.route("/studentinfo",methods=['GET','POST'])
@@ -31,4 +36,4 @@ def main():
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run(host='127.0.0.1')
