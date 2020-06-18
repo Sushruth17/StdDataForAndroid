@@ -1,31 +1,43 @@
-from flask import Flask, render_template
+from flask import Flask, request, jsonify
 import pymysql
+from pymysql.constants.FIELD_TYPE import JSON
+import json
 
 app = Flask(__name__)
 
 conn = pymysql.connect(host='localhost',
-                                     user='root',
-                                     password='',
-                                     charset='utf8mb4',
-                                     db='studentdb',
-                                     cursorclass=pymysql.cursors.DictCursor)
+                       user='root',
+                       password='',
+                       charset='utf8mb4',
+                       db='studentdb',
+                       cursorclass=pymysql.cursors.DictCursor)
 cursor = conn.cursor()
+
+
+# root
+@app.route("/")
+def index():
+    """
+    this is a root dir of my server
+    :return: str
+    """
+    return "This is my root!!!!"
+
+
 def getData():
-    cursor.execute("select * from studentinfo")
-    data = cursor.fetchall() #data from database
+    cursor.execute("select name,address,parentname,age from studentinfo")
+    data = cursor.fetchall()  # data from database
     return data
 
 
-@app.route("/")
+@app.route('/student_data')
 def main():
-    data = getData()
-    print("data====---------->", data)
-    # data = {k.lower(): v for k, v in data.items()}
-    newData = []
-    for i in data:
-        newData.append({k.lower(): v for k, v in i.items()})
-    print("new--->",newData)
-    return render_template('index.html',value=newData)
+    # return "Hello turr %s!" % user
+    Data = getData()
+    print("send data====---------->", Data)
+    newData = {'info': Data}
+    print("new data--->", str(newData))
+    return str(newData)
 
 
 # @app.route("/studentinfo",methods=['GET','POST'])
@@ -35,5 +47,5 @@ def main():
 #     return data
 
 
-if __name__ == "__main__":
-    app.run(host='127.0.0.1')
+if __name__ == '__main__':
+    app.run(host='127.0.0.1', port=5000)
