@@ -39,12 +39,14 @@ def main():
     print("new data--->", str(newData))
     return str(newData)
 
-
-# @app.route("/studentinfo",methods=['GET','POST'])
-# def showTable():
-#     data = getData()
-#     print("data====---------->", data)
-#     return data
+# GET
+@app.route('/student_data/<name>')
+def search_student(name):
+    print("im inside search student")
+    cursor.execute("select address,parentname,age from studentinfo where name = '{0}'".format(name))
+    searched_student = cursor.fetchall()
+    print("searced student====---------->", searched_student)
+    return str(searched_student)
 
 
 if __name__ == '__main__':
