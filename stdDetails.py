@@ -68,6 +68,24 @@ def delete_student(delstd):
     print("deleted id - > ", id22, " and --> ", id2)
     return " Deleted "
 
+# # GET
+# @app.route('/Edit/<edit_std>')
+# def delete_student(edit_std):
+#     cursor = conn.cursor()
+#     print("im inside edit student--->", edit_std)
+#     id22 = cursor.execute("Update studentinfo "
+#                           "set name = '{0}', address = '{1}', parentname = '{2}',"
+#                           " age = '{3}' "
+#                           "where id ='{4}'".format(name, address, parentname, age, id))
+#     # qry = "DELETE FROM `studentinfo` WHERE `studentinfo`.`id` = {0}".format(delstd)
+#     # id2 = cursor.execute(qry)
+#     # print("query--> ", qry)
+#     conn.commit()
+#     cursor.close()
+#     print("edited----->",id22)
+#     return " Edited "
+
+
 @app.route('/api/post_some_data', methods=['POST'])
 def get_text_prediction():
     """
@@ -75,13 +93,18 @@ def get_text_prediction():
     :return: json
     """
     json = request.get_json()
-    print(json)
-    if len(json['text']) == 0:
-        return jsonify({'error': 'invalid input'})
+    print("im received json data ",json)
+    if len(json['name']) == 0:
+         return jsonify({'error': 'invalid input'})
     cursor = conn.cursor()
-    cursor.execute("insert into studentinfo(name,address,age,parentname) values()")
+    cursor.execute("insert into studentinfo(Name,Address,ParentName,Age)"
+                   "values('{0}', '{1}', '{2}','{3}')".format(json['name']
+                                                               ,json['address']
+                                                               ,json['parentname']
+                                                               ,json['age']))
+    conn.commit()
     cursor.close()
-    return jsonify({'Added Suvccessfully'})
+    return 'Added Suvccessfully'
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5000)
