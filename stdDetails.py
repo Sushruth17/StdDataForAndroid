@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 import pymysql
-from pymysql.constants.FIELD_TYPE import JSON
+from pymysql.constants.FIELD_TYPE import JSON, SET
 import json
 
 app = Flask(__name__)
@@ -11,7 +11,6 @@ conn = pymysql.connect(host='localhost',
                        charset='utf8mb4',
                        db='studentdb',
                        cursorclass=pymysql.cursors.DictCursor)
-
 
 
 # root
@@ -42,6 +41,7 @@ def main():
 
     return str(newData)
 
+
 # GET
 @app.route('/student_data/<name>')
 def search_student(name):
@@ -53,6 +53,7 @@ def search_student(name):
     print("searched student====---------->", searched_student)
     cursor.close()
     return str(searched_student)
+
 
 # GET
 @app.route('/<delstd>')
@@ -68,12 +69,13 @@ def delete_student(delstd):
     print("deleted id - > ", id22, " and --> ", id2)
     return " Deleted "
 
+
 # # GET
 # @app.route('/Edit/<edit_std>')
 # def delete_student(edit_std):
 #     cursor = conn.cursor()
 #     print("im inside edit student--->", edit_std)
-#     id22 = cursor.execute("Update studentinfo "
+#     cursor.execute("Update studentinfo "
 #                           "set name = '{0}', address = '{1}', parentname = '{2}',"
 #                           " age = '{3}' "
 #                           "where id ='{4}'".format(name, address, parentname, age, id))
@@ -93,18 +95,35 @@ def get_text_prediction():
     :return: json
     """
     json = request.get_json()
-    print("im received json data ",json)
+    print("im received json data ", json)
     if len(json['name']) == 0:
-         return jsonify({'error': 'invalid input'})
+        return jsonify({'error': 'invalid input'})
     cursor = conn.cursor()
     cursor.execute("insert into studentinfo(Name,Address,ParentName,Age)"
                    "values('{0}', '{1}', '{2}','{3}')".format(json['name']
-                                                               ,json['address']
-                                                               ,json['parentname']
-                                                               ,json['age']))
+                                                              , json['address']
+                                                              , json['parentname']
+                                                              , json['age']))
     conn.commit()
     cursor.close()
     return 'Added Suvccessfully'
+
+
+@app.route('/api/edit_data', methods=['POST'])
+def get_edited_data():
+    json_edit = request.get_json()
+    print("received json EDIT data ", json_edit)
+    if len(json_edit['name']) == 0:
+        return jsonify({'error': 'invalid input'})
+    cursor = conn.cursor()
+    cursor.execute("""UPDATE studentinfo SET Name = %s ,Age = %s ,ParentName = %s ,Address = %s WHERE id = %s """, (json_edit['name'], json_edit['age']
+                                                           , json_edit['parentname']
+                                                           , json_edit['address'], json_edit['id']))
+
+    conn.commit()
+    cursor.close()
+    return 'Edited Suvccessfully'
+
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5000)
