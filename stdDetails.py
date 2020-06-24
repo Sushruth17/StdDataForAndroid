@@ -3,6 +3,9 @@ import pymysql
 from pymysql.constants.FIELD_TYPE import JSON, SET
 import json
 
+
+dataSignInDict = {}
+
 app = Flask(__name__)
 
 conn = pymysql.connect(host='localhost',
@@ -22,23 +25,16 @@ def index():
     """
     return "This is my root!!!!"
 
-
-def getData():
-    cursor = conn.cursor()
-    cursor.execute("select id,name,address,parentname,age from studentinfo")
-    data = cursor.fetchall()  # data from database
-    cursor.close()
-    return data
-
-
 @app.route('/student_data')
 def main():
     # return "Hello turr %s!" % user
-    Data = getData()
+    cursor = conn.cursor()
+    cursor.execute("select id,name,address,parentname,age from studentinfo")
+    Data = cursor.fetchall()  # data from database
+    cursor.close()
     print("send data====---------->", Data)
     newData = {'info': Data}
     print("new data--->", str(newData))
-
     return str(newData)
 
 
@@ -70,26 +66,8 @@ def delete_student(delstd):
     return " Deleted "
 
 
-# # GET
-# @app.route('/Edit/<edit_std>')
-# def delete_student(edit_std):
-#     cursor = conn.cursor()
-#     print("im inside edit student--->", edit_std)
-#     cursor.execute("Update studentinfo "
-#                           "set name = '{0}', address = '{1}', parentname = '{2}',"
-#                           " age = '{3}' "
-#                           "where id ='{4}'".format(name, address, parentname, age, id))
-#     # qry = "DELETE FROM `studentinfo` WHERE `studentinfo`.`id` = {0}".format(delstd)
-#     # id2 = cursor.execute(qry)
-#     # print("query--> ", qry)
-#     conn.commit()
-#     cursor.close()
-#     print("edited----->",id22)
-#     return " Edited "
-
-
-@app.route('/api/post_some_data', methods=['POST'])
-def get_text_prediction():
+@app.route('/api/add_data', methods=['POST'])
+def addStudent():
     """
     predicts requested text whether it is ham or spam
     :return: json
@@ -110,7 +88,7 @@ def get_text_prediction():
 
 
 @app.route('/api/edit_data', methods=['POST'])
-def get_edited_data():
+def editStudent():
     json_edit = request.get_json()
     print("received json EDIT data ", json_edit)
     if len(json_edit['name']) == 0:
@@ -123,6 +101,34 @@ def get_edited_data():
     conn.commit()
     cursor.close()
     return 'Edited Suvccessfully'
+
+
+@app.route('/api/sign_in_data',methods=['GET','POST'])
+def signIn():
+    json_SignIn = request.get_json()
+    print("received json Sign in data ", json_SignIn)
+    username = json_SignIn['username']
+    password = json_SignIn['password']
+    print(len(username))
+    print(len(password))
+    if len(username) == 0 or len(password)== 0:
+        return jsonify('Please fill all the fields')
+    cursor = conn.cursor()
+    print(" passowrd -->",password)
+    pwd = "select user_password from tbl_user where user_username = \"{}\"".format(username)
+    print("pwd-------->", pwd)
+    cursor.execute(pwd)
+    records = cursor.fetchone()
+    print("record------------->", records)
+    print("password---->", password)
+    if records != None:
+        if records['user_password'] == password:
+            return "Successfully signed in"
+        else:
+            return "Password wrong"
+    else:
+        return "User wrong"
+
 
 
 if __name__ == '__main__':
