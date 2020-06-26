@@ -4,9 +4,6 @@ from pymysql.constants.FIELD_TYPE import JSON, SET
 import json
 from copy import deepcopy
 
-
-
-
 app = Flask(__name__)
 
 conn = pymysql.connect(host='localhost',
@@ -16,6 +13,7 @@ conn = pymysql.connect(host='localhost',
                        db='studentdb',
                        cursorclass=pymysql.cursors.DictCursor)
 
+
 # root
 @app.route("/")
 def index():
@@ -24,6 +22,7 @@ def index():
     :return: str
     """
     return "This is my root!!!!"
+
 
 @app.route('/student_data')
 def main():
@@ -45,10 +44,13 @@ def search_student(name):
     print("im inside search student")
     cursor.execute("select id,name,address,parentname,age from studentinfo where name = '{0}'".format(name))
     searched_student = cursor.fetchall()
+    cursor.close()
     searched_student = {'info': searched_student}
     print("searched student====---------->", searched_student)
-    cursor.close()
     return str(searched_student)
+
+
+
 
 
 # GET
@@ -94,16 +96,17 @@ def editStudent():
     if len(json_edit['name']) == 0:
         return jsonify({'error': 'invalid input'})
     cursor = conn.cursor()
-    cursor.execute("""UPDATE studentinfo SET Name = %s ,Age = %s ,ParentName = %s ,Address = %s WHERE id = %s """, (json_edit['name'], json_edit['age']
-                                                           , json_edit['parentname']
-                                                           , json_edit['address'], json_edit['id']))
+    cursor.execute("""UPDATE studentinfo SET Name = %s ,Age = %s ,ParentName = %s ,Address = %s WHERE id = %s """,
+                   (json_edit['name'], json_edit['age']
+                    , json_edit['parentname']
+                    , json_edit['address'], json_edit['id']))
 
     conn.commit()
     cursor.close()
     return 'Edited Suvccessfully'
 
 
-@app.route('/api/sign_in_data',methods=['GET','POST'])
+@app.route('/api/sign_in_data', methods=['GET', 'POST'])
 def signIn():
     json_SignIn = request.get_json()
     print("received json Sign in data ", json_SignIn)
@@ -111,10 +114,10 @@ def signIn():
     password = json_SignIn['password']
     print(len(username))
     print(len(password))
-    if len(username) == 0 or len(password)== 0:
+    if len(username) == 0 or len(password) == 0:
         return 'Please fill all the fields'
     cursor = conn.cursor()
-    print(" passowrd -->",password)
+    print(" passowrd -->", password)
     pwd = "select user_password from tbl_user where user_username = \"{}\"".format(username)
     print("pwd-------->", pwd)
     cursor.execute(pwd)
@@ -129,7 +132,8 @@ def signIn():
     else:
         return "User wrong"
 
-@app.route('/api/sign_up_data',methods=['GET','POST'])
+
+@app.route('/api/sign_up_data', methods=['GET', 'POST'])
 def signUp():
     json_SignIn = request.get_json()
     print("received json Sign in data ", json_SignIn)
@@ -177,9 +181,6 @@ def get_student_marks(studentid):
     print("new data--->", str(newData))
     cursor.close()
     return str(newData)
-
-
-
 
 
 if __name__ == '__main__':
