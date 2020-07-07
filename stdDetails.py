@@ -161,26 +161,52 @@ def get_student_marks(studentid):
     print("im inside get marks student")
     cursor.execute("select id,marks,subid from marksinfo where sid = '{0}'".format(studentid))
     marks_data = cursor.fetchall()
+    print("marksdata---->",marks_data)
+    if marks_data != ():
+        subid = [sub['subid'] for sub in marks_data]
 
-    subid = [sub['subid'] for sub in marks_data]
+        cursor.execute("SELECT id,name FROM `subjectinfo` WHERE id IN {0}".format(tuple(subid)))
+        sub_data = cursor.fetchall()
+        # sub_name = [sub['name'] for sub in sub_data]
+        print("marks_data====---------->", str(marks_data))
+        print("sub_data====---------->", str(sub_data))
+        subMraks = []
+        for i in marks_data:
+            for j in sub_data:
+                if i['subid'] == j['id']:
+                    dic = deepcopy(i)  # creates a deepcopy of row, so that the
+                    dic.update(j)  # update operation doesn't affects the original object
+                    subMraks.append(dic)
+        print("--sub marks", subMraks)
+        newData = {'infoMarks': subMraks}
+        print("new data--->", str(newData))
+        cursor.close()
+        return str(newData)
+    return ""
 
-    cursor.execute("SELECT id,name FROM `subjectinfo` WHERE id IN {0}".format(tuple(subid)))
-    sub_data = cursor.fetchall()
-    # sub_name = [sub['name'] for sub in sub_data]
-    print("marks_data====---------->", str(marks_data))
-    print("sub_data====---------->", str(sub_data))
-    subMraks = []
-    for i in marks_data:
-        for j in sub_data:
-            if i['subid'] == j['id']:
-                dic = deepcopy(i)  # creates a deepcopy of row, so that the
-                dic.update(j)  # update operation doesn't affects the original object
-                subMraks.append(dic)
-    print("--sub marks", subMraks)
-    newData = {'infoMarks': subMraks}
-    print("new data--->", str(newData))
+@app.route('/topper/<year>')
+def acedamic_topper(year):
+    cursor = conn.cursor()
+    print("im inside achedamic topper student", year)
+            # cursor.execute("select sid,Sum(marks) from marksinfo where year = '{0}'"
+            #                "group by sid order by Sum(marks) desc".format(year))
+            # sid_marks = cursor.fetchone()
+            # print("sid_marks====---------->", sid_marks)
+            # sid = sid_marks.get("sid")
+            # print("sid",sid)
+            # cursor.execute("select name from studentinfo where id = '{0}'".format(sid))
+            # topper = cursor.fetchall()
+            # print("topper name====---------->", topper)
+
+    cursor.execute("""select studentinfo.name,marksinfo.sid,Sum(marksinfo.marks) as total
+    from marksinfo inner join studentinfo ON marksinfo.sid=studentinfo.id 
+    where year = %s group by sid order by Sum(marksinfo.marks) DESC""",(year))
+    topper_marks = cursor.fetchone()
+    print("sid_marks====---------->", topper_marks)
     cursor.close()
-    return str(newData)
+    topper_marks = {'info': topper_marks}
+    print("sid_marks====---------->", topper_marks)
+    return str(topper_marks)
 
 
 if __name__ == '__main__':
