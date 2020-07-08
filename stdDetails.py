@@ -122,8 +122,10 @@ def signIn():
     print("pwd-------->", pwd)
     cursor.execute(pwd)
     records = cursor.fetchone()
+    cursor.close()
     print("record------------->", records)
     print("password---->", password)
+
     if records != None:
         if records['user_password'] == password:
             return "Successfully signed in"
@@ -150,8 +152,10 @@ def signUp():
     print(data)
     if len(data) is 0:
         conn.commit()
+        cursor.close()
         return "User Created Successfully"
     else:
+        cursor.close()
         return json.dumps({'error': str(data[0])})
 
 
@@ -204,9 +208,15 @@ def acedamic_topper(year):
     topper_marks = cursor.fetchone()
     print("sid_marks====---------->", topper_marks)
     cursor.close()
-    topper_marks = {'info': topper_marks}
-    print("sid_marks====---------->", topper_marks)
-    return str(topper_marks)
+    total = topper_marks.get("total")
+    print("total==---------->", total)
+    topper_marks["total"] = str(total)
+    new_topper = []
+    new_topper.append(topper_marks)
+    print("sid_marks====---------->", new_topper)
+    new_topper = {'infoTopper': new_topper}
+    print("sid_marks====---------->", new_topper)
+    return str(new_topper)
 
 
 if __name__ == '__main__':
