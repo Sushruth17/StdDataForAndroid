@@ -1,3 +1,5 @@
+import re
+
 from flask import Flask, request, jsonify
 import pymysql
 from pymysql.constants.FIELD_TYPE import JSON, SET
@@ -218,6 +220,47 @@ def acedamic_topper(year):
     print("sid_marks====---------->", new_topper)
     return str(new_topper)
 
+@app.route('/topper')
+def any_year_topper():
+    cursor = conn.cursor()
+    cursor.execute("""select studentinfo.name,marksinfo.sid,ROUND(Sum(marksinfo.marks),0) as total
+        from marksinfo inner join studentinfo ON marksinfo.sid=studentinfo.id 
+        group by sid order by Sum(marksinfo.marks) DESC""")
+    anyYearTopper = cursor.fetchall()
+    anyYearTopper = {'infoTopper': anyYearTopper}
+    print("Any year topper",anyYearTopper)
+    regex = "[A-Za-z0-9 ',:{}\[\]]*(Decimal+\('([0-9]*)'\))[A-Za-z0-9 ',:{}\[\]]"
+    # for i in anyYearTopper:
+    #         # print(i)
+    #         strr = i.get('total')
+    #         print("strrrrrrrrrrrrrrrrr",str)
+    #         match = re.match(regex,strr)
+    #         strr = strr.replace(match.group(1),match.group(3))
+    #         print("numm"+strr)
+
+    newstrr = ""
+    i = 1
+    anyYearTopper = str(anyYearTopper)
+    while 1:
+    # for i in anyYearTopper:
+
+        # strr = "ybuyg97gDecimal('344')"
+        # print("string json",strr)
+        matchedResult = re.match(regex,anyYearTopper)
+        print("match", matchedResult)
+        if matchedResult != None:
+            anyYearTopper = anyYearTopper.replace(matchedResult.group(1),matchedResult.group(2))
+            print("numm",anyYearTopper)
+
+        # return newstrr
+        else:
+            print("NO match found in ----->")
+            print("Final aresutl - > ", anyYearTopper)
+            break
+    return anyYearTopper
+
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5000)
+
+
