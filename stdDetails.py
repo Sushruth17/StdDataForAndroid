@@ -4,9 +4,6 @@ from pymysql.constants.FIELD_TYPE import JSON, SET
 import json
 from copy import deepcopy
 
-
-
-
 app = Flask(__name__)
 
 conn = pymysql.connect(host='localhost',
@@ -16,6 +13,7 @@ conn = pymysql.connect(host='localhost',
                        db='studentdb',
                        cursorclass=pymysql.cursors.DictCursor)
 
+
 # root
 @app.route("/")
 def index():
@@ -24,6 +22,7 @@ def index():
     :return: str
     """
     return "This is my root!!!!"
+
 
 @app.route('/student_data')
 def main():
@@ -45,10 +44,13 @@ def search_student(name):
     print("im inside search student")
     cursor.execute("select id,name,address,parentname,age from studentinfo where name = '{0}'".format(name))
     searched_student = cursor.fetchall()
+    cursor.close()
     searched_student = {'info': searched_student}
     print("searched student====---------->", searched_student)
-    cursor.close()
     return str(searched_student)
+
+
+
 
 
 # GET
@@ -94,16 +96,17 @@ def editStudent():
     if len(json_edit['name']) == 0:
         return jsonify({'error': 'invalid input'})
     cursor = conn.cursor()
-    cursor.execute("""UPDATE studentinfo SET Name = %s ,Age = %s ,ParentName = %s ,Address = %s WHERE id = %s """, (json_edit['name'], json_edit['age']
-                                                           , json_edit['parentname']
-                                                           , json_edit['address'], json_edit['id']))
+    cursor.execute("""UPDATE studentinfo SET Name = %s ,Age = %s ,ParentName = %s ,Address = %s WHERE id = %s """,
+                   (json_edit['name'], json_edit['age']
+                    , json_edit['parentname']
+                    , json_edit['address'], json_edit['id']))
 
     conn.commit()
     cursor.close()
     return 'Edited Suvccessfully'
 
 
-@app.route('/api/sign_in_data',methods=['GET','POST'])
+@app.route('/api/sign_in_data', methods=['GET', 'POST'])
 def signIn():
     json_SignIn = request.get_json()
     print("received json Sign in data ", json_SignIn)
@@ -111,16 +114,18 @@ def signIn():
     password = json_SignIn['password']
     print(len(username))
     print(len(password))
-    if len(username) == 0 or len(password)== 0:
+    if len(username) == 0 or len(password) == 0:
         return 'Please fill all the fields'
     cursor = conn.cursor()
-    print(" passowrd -->",password)
+    print(" passowrd -->", password)
     pwd = "select user_password from tbl_user where user_username = \"{}\"".format(username)
     print("pwd-------->", pwd)
     cursor.execute(pwd)
     records = cursor.fetchone()
+    cursor.close()
     print("record------------->", records)
     print("password---->", password)
+
     if records != None:
         if records['user_password'] == password:
             return "Successfully signed in"
@@ -129,7 +134,8 @@ def signIn():
     else:
         return "User wrong"
 
-@app.route('/api/sign_up_data',methods=['GET','POST'])
+
+@app.route('/api/sign_up_data', methods=['GET', 'POST'])
 def signUp():
     json_SignIn = request.get_json()
     print("received json Sign in data ", json_SignIn)
@@ -146,8 +152,10 @@ def signUp():
     print(data)
     if len(data) is 0:
         conn.commit()
+        cursor.close()
         return "User Created Successfully"
     else:
+        cursor.close()
         return json.dumps({'error': str(data[0])})
 
 
@@ -157,29 +165,58 @@ def get_student_marks(studentid):
     print("im inside get marks student")
     cursor.execute("select id,marks,subid from marksinfo where sid = '{0}'".format(studentid))
     marks_data = cursor.fetchall()
+    print("marksdata---->",marks_data)
+    if marks_data != ():
+        subid = [sub['subid'] for sub in marks_data]
 
-    subid = [sub['subid'] for sub in marks_data]
+        cursor.execute("SELECT id,name FROM `subjectinfo` WHERE id IN {0}".format(tuple(subid)))
+        sub_data = cursor.fetchall()
+        # sub_name = [sub['name'] for sub in sub_data]
+        print("marks_data====---------->", str(marks_data))
+        print("sub_data====---------->", str(sub_data))
+        subMraks = []
+        for i in marks_data:
+            for j in sub_data:
+                if i['subid'] == j['id']:
+                    dic = deepcopy(i)  # creates a deepcopy of row, so that the
+                    dic.update(j)  # update operation doesn't affects the original object
+                    subMraks.append(dic)
+        print("--sub marks", subMraks)
+        newData = {'infoMarks': subMraks}
+        print("new data--->", str(newData))
+        cursor.close()
+        return str(newData)
+    return ""
 
-    cursor.execute("SELECT id,name FROM `subjectinfo` WHERE id IN {0}".format(tuple(subid)))
-    sub_data = cursor.fetchall()
-    # sub_name = [sub['name'] for sub in sub_data]
-    print("marks_data====---------->", str(marks_data))
-    print("sub_data====---------->", str(sub_data))
-    subMraks = []
-    for i in marks_data:
-        for j in sub_data:
-            if i['subid'] == j['id']:
-                dic = deepcopy(i)  # creates a deepcopy of row, so that the
-                dic.update(j)  # update operation doesn't affects the original object
-                subMraks.append(dic)
-    print("--sub marks", subMraks)
-    newData = {'infoMarks': subMraks}
-    print("new data--->", str(newData))
+@app.route('/topper/<year>')
+def acedamic_topper(year):
+    cursor = conn.cursor()
+    print("im inside achedamic topper student", year)
+            # cursor.execute("select sid,Sum(marks) from marksinfo where year = '{0}'"
+            #                "group by sid order by Sum(marks) desc".format(year))
+            # sid_marks = cursor.fetchone()
+            # print("sid_marks====---------->", sid_marks)
+            # sid = sid_marks.get("sid")
+            # print("sid",sid)
+            # cursor.execute("select name from studentinfo where id = '{0}'".format(sid))
+            # topper = cursor.fetchall()
+            # print("topper name====---------->", topper)
+
+    cursor.execute("""select studentinfo.name,marksinfo.sid,Sum(marksinfo.marks) as total
+    from marksinfo inner join studentinfo ON marksinfo.sid=studentinfo.id 
+    where year = %s group by sid order by Sum(marksinfo.marks) DESC""",(year))
+    topper_marks = cursor.fetchone()
+    print("sid_marks====---------->", topper_marks)
     cursor.close()
-    return str(newData)
-
-
-
+    total = topper_marks.get("total")
+    print("total==---------->", total)
+    topper_marks["total"] = str(total)
+    new_topper = []
+    new_topper.append(topper_marks)
+    print("sid_marks====---------->", new_topper)
+    new_topper = {'infoTopper': new_topper}
+    print("sid_marks====---------->", new_topper)
+    return str(new_topper)
 
 
 if __name__ == '__main__':
