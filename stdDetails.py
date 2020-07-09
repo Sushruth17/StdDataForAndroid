@@ -259,6 +259,11 @@ def any_year_topper():
 
     return anyYearTopperList
 
+#"""select studentinfo.name,marksinfo.sid,branchinfo.Name,year,Sum(marksinfo.marks) as total
+# from marksinfo inner join studentinfo ON marksinfo.sid=studentinfo.id
+# join branchinfo ON branchinfo.id=studentinfo.Bid
+# where year = 20172018 and branchinfo.Name = "ECE" group by sid order by Sum(marksinfo.marks) DESC"""
+
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5000)
