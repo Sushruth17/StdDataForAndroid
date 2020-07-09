@@ -1,10 +1,9 @@
-import re
-
-from flask import Flask, request, jsonify
-import pymysql
-from pymysql.constants.FIELD_TYPE import JSON, SET
 import json
+import re
 from copy import deepcopy
+
+import pymysql
+from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
@@ -204,7 +203,7 @@ def acedamic_topper(year):
             # topper = cursor.fetchall()
             # print("topper name====---------->", topper)
 
-    cursor.execute("""select studentinfo.name,marksinfo.sid,Sum(marksinfo.marks) as total
+    cursor.execute("""select studentinfo.name,marksinfo.sid,year,Sum(marksinfo.marks) as total
     from marksinfo inner join studentinfo ON marksinfo.sid=studentinfo.id 
     where year = %s group by sid order by Sum(marksinfo.marks) DESC""",(year))
     topper_marks = cursor.fetchone()
@@ -223,12 +222,14 @@ def acedamic_topper(year):
 @app.route('/topper')
 def any_year_topper():
     cursor = conn.cursor()
-    cursor.execute("""select studentinfo.name,marksinfo.sid,ROUND(Sum(marksinfo.marks),0) as total
+    cursor.execute("""select studentinfo.name,marksinfo.sid,year,Sum(marksinfo.marks) as total
         from marksinfo inner join studentinfo ON marksinfo.sid=studentinfo.id 
         group by sid order by Sum(marksinfo.marks) DESC""")
-    anyYearTopper = cursor.fetchall()
-    anyYearTopper = {'infoTopper': anyYearTopper}
-    print("Any year topper",anyYearTopper)
+    anyYearTopper = cursor.fetchone()
+    anyYearTopperList = []
+    anyYearTopperList.append(anyYearTopper)
+    anyYearTopperList = {'infoTopper': anyYearTopperList}
+    print("Any year topper",anyYearTopperList)
     regex = "[A-Za-z0-9 ',:{}\[\]]*(Decimal+\('([0-9]*)'\))[A-Za-z0-9 ',:{}\[\]]"
     # for i in anyYearTopper:
     #         # print(i)
@@ -240,24 +241,23 @@ def any_year_topper():
 
     newstrr = ""
     i = 1
-    anyYearTopper = str(anyYearTopper)
+    anyYearTopperList = str(anyYearTopperList)
     while 1:
-    # for i in anyYearTopper:
-
         # strr = "ybuyg97gDecimal('344')"
         # print("string json",strr)
-        matchedResult = re.match(regex,anyYearTopper)
+        matchedResult = re.match(regex,anyYearTopperList)
         print("match", matchedResult)
         if matchedResult != None:
-            anyYearTopper = anyYearTopper.replace(matchedResult.group(1),matchedResult.group(2))
-            print("numm",anyYearTopper)
+            anyYearTopperList = anyYearTopperList.replace(matchedResult.group(1),matchedResult.group(2))
+            print("numm",anyYearTopperList)
 
         # return newstrr
         else:
             print("NO match found in ----->")
-            print("Final aresutl - > ", anyYearTopper)
+            print("Final aresutl - > ", anyYearTopperList)
             break
-    return anyYearTopper
+
+    return anyYearTopperList
 
 
 if __name__ == '__main__':
