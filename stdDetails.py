@@ -107,8 +107,9 @@ def editStudent():
     return 'Edited Suvccessfully'
 
 
-@app.route('/api/sign_in_data', methods=['GET', 'POST'])
+@app.route('/api/sign_in_data', methods=['POST'])
 def signIn():
+    print("sign_in_data method called ")
     json_SignIn = request.get_json()
     print("received json Sign in data ", json_SignIn)
     username = json_SignIn['username']
@@ -142,22 +143,34 @@ def signUp():
     print("received json Sign in data ", json_SignIn)
     name = json_SignIn['name']
     username = json_SignIn['username']
+    email_id = json_SignIn['email id']
     password = json_SignIn['password']
+    confirm_password = json_SignIn['confirm password']
+    if password != confirm_password:
+            return "Password Does Not Match"
     print(len(username))
     print(len(password))
     if len(username) == 0 or len(password) == 0:
         return 'Please fill all the fields'
     cursor = conn.cursor()
-    cursor.callproc('sp_createUser', (name, username, password))
-    data = cursor.fetchall()
-    print(data)
-    if len(data) is 0:
-        conn.commit()
-        cursor.close()
-        return "User Created Successfully"
+    cursor.execute("""select user_email_id from tbl_user where user_role = "teacher" and user_status = "not created" """)
+    email_froom_db = cursor.fetchall()
+    email_froom_db = [sub['user_email_id'] for sub in email_froom_db]
+    print("----email from db----",email_froom_db[0])
+    print("-----eamilid from app----",email_id)
+    if email_id == email_froom_db[0]:
+        cursor.callproc('sp_createUser', (name, username, password))
+        data = cursor.fetchall()
+        print(data)
+        if len(data) is 0:
+            conn.commit()
+            cursor.close()
+            return "User Created Successfully"
+        else:
+            cursor.close()
+            return json.dumps({'error': str(data[0])})
     else:
-        cursor.close()
-        return json.dumps({'error': str(data[0])})
+        return "you are not allowed to sign up"
 
 
 @app.route('/marks/<studentid>')
@@ -189,10 +202,15 @@ def get_student_marks(studentid):
         return str(newData)
     return ""
 
-@app.route('/topper/<year>')
-def acedamic_topper(year):
+@app.route('/topperStudent',methods=['GET', 'POST'])
+def acedamic_topper():
     cursor = conn.cursor()
-    print("im inside achedamic topper student", year)
+    json_Data = request.get_json()
+    print("received json data ", json_Data)
+    year = json_Data['year']
+    branch = json_Data['branch']
+    print("---------BRANCH------------",branch)
+    print("im inside achedamic topper student")
             # cursor.execute("select sid,Sum(marks) from marksinfo where year = '{0}'"
             #                "group by sid order by Sum(marks) desc".format(year))
             # sid_marks = cursor.fetchone()
@@ -203,21 +221,32 @@ def acedamic_topper(year):
             # topper = cursor.fetchall()
             # print("topper name====---------->", topper)
 
-    cursor.execute("""select studentinfo.name,marksinfo.sid,year,Sum(marksinfo.marks) as total
-    from marksinfo inner join studentinfo ON marksinfo.sid=studentinfo.id 
-    where year = %s group by sid order by Sum(marksinfo.marks) DESC""",(year))
-    topper_marks = cursor.fetchone()
-    print("sid_marks====---------->", topper_marks)
-    cursor.close()
-    total = topper_marks.get("total")
-    print("total==---------->", total)
-    topper_marks["total"] = str(total)
-    new_topper = []
-    new_topper.append(topper_marks)
-    print("sid_marks====---------->", new_topper)
-    new_topper = {'infoTopper': new_topper}
-    print("sid_marks====---------->", new_topper)
-    return str(new_topper)
+    if (branch != 'ECE') and (branch != 'CSE') and (branch != 'ISE'):
+        print("cursor executing without branch")
+        cursor.execute("""select studentinfo.name,marksinfo.sid,year,Sum(marksinfo.marks) as total
+        from marksinfo inner join studentinfo ON marksinfo.sid=studentinfo.id 
+        where year = %s group by sid order by Sum(marksinfo.marks) DESC""",(year))
+    else :
+        print("cursor executing with branch")
+        cursor.execute("""select studentinfo.name,marksinfo.sid,branchinfo.Name,year,Sum(marksinfo.marks) as total
+        from marksinfo inner join studentinfo ON marksinfo.sid=studentinfo.id
+        join branchinfo ON branchinfo.id=studentinfo.Bid
+        where year = %s and branchinfo.Name = %s group by sid order by Sum(marksinfo.marks) DESC""",(year,branch))
+    topper = cursor.fetchone()
+    if topper!= None:
+        print("topper_====---------->", topper)
+        cursor.close()
+        total = topper.get("total")
+        print("total==---------->", total)
+        topper["total"] = str(total)
+        new_topper = []
+        new_topper.append(topper)
+        print("sid_marks====---------->", new_topper)
+        new_topper = {'infoTopper': new_topper}
+        print("sid_marks====---------->", new_topper)
+        return str(new_topper)
+    else:
+        return "No Data Found"
 
 @app.route('/topper')
 def any_year_topper():
@@ -259,7 +288,7 @@ def any_year_topper():
 
     return anyYearTopperList
 
-#"""select studentinfo.name,marksinfo.sid,branchinfo.Name,year,Sum(marksinfo.marks) as total
+# """select studentinfo.name,marksinfo.sid,branchinfo.Name,year,Sum(marksinfo.marks) as total
 # from marksinfo inner join studentinfo ON marksinfo.sid=studentinfo.id
 # join branchinfo ON branchinfo.id=studentinfo.Bid
 # where year = 20172018 and branchinfo.Name = "ECE" group by sid order by Sum(marksinfo.marks) DESC"""
