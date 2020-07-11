@@ -5,6 +5,11 @@ from copy import deepcopy
 import pymysql
 from flask import Flask, request, jsonify
 
+activeStatus = "active"
+inactiveStatus = "inactive"
+notCreatedStatus = "not created"
+
+
 app = Flask(__name__)
 
 conn = pymysql.connect(host='localhost',
@@ -49,9 +54,6 @@ def search_student(name):
     searched_student = {'info': searched_student}
     print("searched student====---------->", searched_student)
     return str(searched_student)
-
-
-
 
 
 # GET
@@ -146,20 +148,26 @@ def signUp():
     email_id = json_SignIn['email id']
     password = json_SignIn['password']
     confirm_password = json_SignIn['confirm password']
-    if password != confirm_password:
-            return "Password Does Not Match"
+    # email_id_pattern = "[a-zA-Z0-9._-]+@[a-z]+\.+[\(com\|org\|net\){3}]+"
+    # email_pattern_match = re.match(email_id_pattern,email_id)
+    # if email_pattern_match == None:
+    #     return "Invalid email id format"
+    # if password != confirm_password:
+    #     return "Password Does Not Match"
     print(len(username))
     print(len(password))
-    if len(username) == 0 or len(password) == 0:
+    if len(name) == 0 or len(username) == 0 or len(email_id) == 0 or len(password) == 0:
         return 'Please fill all the fields'
     cursor = conn.cursor()
-    cursor.execute("""select user_email_id from tbl_user where user_role = "teacher" and user_status = "not created" """)
+    cursor.execute(
+        """select user_email_id from tbl_user where user_type_id = 0 and user_status = "not created" """)
     email_froom_db = cursor.fetchall()
     email_froom_db = [sub['user_email_id'] for sub in email_froom_db]
-    print("----email from db----",email_froom_db)
-    print("-----eamilid from app----",email_id)
-    if email_id == email_froom_db[0]:
-        cursor.callproc('sp_createUser', (name, username, password))
+    print("----email from db----", email_froom_db)
+    print("-----eamilid from app----", email_id)
+    if email_id in email_froom_db:
+        cursor.execute("update  tbl_user set user_name = '{0}' ,user_username = '{1}' ,user_password = '{2}' , user_status = '{3}' where"
+                        " user_email_id = '{4}' ".format(name, username, password, activeStatus, email_id))
         data = cursor.fetchall()
         print(data)
         if len(data) is 0:
@@ -179,7 +187,7 @@ def get_student_marks(studentid):
     print("im inside get marks student")
     cursor.execute("select id,marks,subid from marksinfo where sid = '{0}'".format(studentid))
     marks_data = cursor.fetchall()
-    print("marksdata---->",marks_data)
+    print("marksdata---->", marks_data)
     if marks_data != ():
         subid = [sub['subid'] for sub in marks_data]
 
@@ -202,38 +210,39 @@ def get_student_marks(studentid):
         return str(newData)
     return ""
 
-@app.route('/topperStudent',methods=['GET', 'POST'])
+
+@app.route('/topperStudent', methods=['GET', 'POST'])
 def acedamic_topper():
     cursor = conn.cursor()
     json_Data = request.get_json()
     print("received json data ", json_Data)
     year = json_Data['year']
     branch = json_Data['branch']
-    print("---------BRANCH------------",branch)
+    print("---------BRANCH------------", branch)
     print("im inside achedamic topper student")
-            # cursor.execute("select sid,Sum(marks) from marksinfo where year = '{0}'"
-            #                "group by sid order by Sum(marks) desc".format(year))
-            # sid_marks = cursor.fetchone()
-            # print("sid_marks====---------->", sid_marks)
-            # sid = sid_marks.get("sid")
-            # print("sid",sid)
-            # cursor.execute("select name from studentinfo where id = '{0}'".format(sid))
-            # topper = cursor.fetchall()
-            # print("topper name====---------->", topper)
+    # cursor.execute("select sid,Sum(marks) from marksinfo where year = '{0}'"
+    #                "group by sid order by Sum(marks) desc".format(year))
+    # sid_marks = cursor.fetchone()
+    # print("sid_marks====---------->", sid_marks)
+    # sid = sid_marks.get("sid")
+    # print("sid",sid)
+    # cursor.execute("select name from studentinfo where id = '{0}'".format(sid))
+    # topper = cursor.fetchall()
+    # print("topper name====---------->", topper)
 
     if (branch != 'ECE') and (branch != 'CSE') and (branch != 'ISE'):
         print("cursor executing without branch")
         cursor.execute("""select studentinfo.name,marksinfo.sid,year,Sum(marksinfo.marks) as total
         from marksinfo inner join studentinfo ON marksinfo.sid=studentinfo.id 
-        where year = %s group by sid order by Sum(marksinfo.marks) DESC""",(year))
-    else :
+        where year = %s group by sid order by Sum(marksinfo.marks) DESC""", (year))
+    else:
         print("cursor executing with branch")
         cursor.execute("""select studentinfo.name,marksinfo.sid,branchinfo.Name,year,Sum(marksinfo.marks) as total
         from marksinfo inner join studentinfo ON marksinfo.sid=studentinfo.id
         join branchinfo ON branchinfo.id=studentinfo.Bid
-        where year = %s and branchinfo.Name = %s group by sid order by Sum(marksinfo.marks) DESC""",(year,branch))
+        where year = %s and branchinfo.Name = %s group by sid order by Sum(marksinfo.marks) DESC""", (year, branch))
     topper = cursor.fetchone()
-    if topper!= None:
+    if topper != None:
         print("topper_====---------->", topper)
         cursor.close()
         total = topper.get("total")
@@ -248,6 +257,7 @@ def acedamic_topper():
     else:
         return "No Data Found"
 
+
 @app.route('/topper')
 def any_year_topper():
     cursor = conn.cursor()
@@ -258,7 +268,7 @@ def any_year_topper():
     anyYearTopperList = []
     anyYearTopperList.append(anyYearTopper)
     anyYearTopperList = {'infoTopper': anyYearTopperList}
-    print("Any year topper",anyYearTopperList)
+    print("Any year topper", anyYearTopperList)
     regex = "[A-Za-z0-9 ',:{}\[\]]*(Decimal+\('([0-9]*)'\))[A-Za-z0-9 ',:{}\[\]]"
     # for i in anyYearTopper:
     #         # print(i)
@@ -274,11 +284,11 @@ def any_year_topper():
     while 1:
         # strr = "ybuyg97gDecimal('344')"
         # print("string json",strr)
-        matchedResult = re.match(regex,anyYearTopperList)
+        matchedResult = re.match(regex, anyYearTopperList)
         print("match", matchedResult)
         if matchedResult != None:
-            anyYearTopperList = anyYearTopperList.replace(matchedResult.group(1),matchedResult.group(2))
-            print("numm",anyYearTopperList)
+            anyYearTopperList = anyYearTopperList.replace(matchedResult.group(1), matchedResult.group(2))
+            print("numm", anyYearTopperList)
 
         # return newstrr
         else:
@@ -288,6 +298,7 @@ def any_year_topper():
 
     return anyYearTopperList
 
+
 # """select studentinfo.name,marksinfo.sid,branchinfo.Name,year,Sum(marksinfo.marks) as total
 # from marksinfo inner join studentinfo ON marksinfo.sid=studentinfo.id
 # join branchinfo ON branchinfo.id=studentinfo.Bid
@@ -296,5 +307,3 @@ def any_year_topper():
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5000)
-
-
