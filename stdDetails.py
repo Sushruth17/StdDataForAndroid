@@ -156,7 +156,7 @@ def signUp():
     cursor.execute("""select user_email_id from tbl_user where user_role = "teacher" and user_status = "not created" """)
     email_froom_db = cursor.fetchall()
     email_froom_db = [sub['user_email_id'] for sub in email_froom_db]
-    print("----email from db----",email_froom_db[0])
+    print("----email from db----",email_froom_db)
     print("-----eamilid from app----",email_id)
     if email_id == email_froom_db[0]:
         cursor.callproc('sp_createUser', (name, username, password))
