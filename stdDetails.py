@@ -134,11 +134,12 @@ def signIn():
     if records != None:
         if records['user_password'] == password:
             cursor.execute("""select usertype.user_type
-             from tbl_user inner join usertype ON tbl_user.user_type_id=usertype.id""")
+             from tbl_user inner join usertype ON tbl_user.user_type_id=usertype.id where user_username = '{0}' """.format(username))
             usertype = cursor.fetchone()
+            usertype = usertype['user_type']
             print("----------User Type---------", usertype)
             cursor.close()
-            return "Successfully signed in"
+            return str(usertype)
         else:
             return "Password wrong"
     else:
@@ -168,6 +169,7 @@ def signUp():
     cursor.execute(
         """select user_email_id from tbl_user where user_type_id = 0 and user_status = "not created" """)
     email_froom_db = cursor.fetchall()
+    print("----alll email from db----", email_froom_db)
     email_froom_db = [sub['user_email_id'] for sub in email_froom_db]
     print("----email from db----", email_froom_db)
     print("-----eamilid from app----", email_id)
