@@ -122,16 +122,22 @@ def signIn():
         return 'Please fill all the fields'
     cursor = conn.cursor()
     print(" passowrd -->", password)
+
     pwd = "select user_password from tbl_user where user_username = \"{}\"".format(username)
     print("pwd-------->", pwd)
     cursor.execute(pwd)
     records = cursor.fetchone()
-    cursor.close()
+
     print("record------------->", records)
     print("password---->", password)
 
     if records != None:
         if records['user_password'] == password:
+            cursor.execute("""select usertype.user_type
+             from tbl_user inner join usertype ON tbl_user.user_type_id=usertype.id""")
+            usertype = cursor.fetchone()
+            print("----------User Type---------", usertype)
+            cursor.close()
             return "Successfully signed in"
         else:
             return "Password wrong"
