@@ -132,14 +132,15 @@ def signIn():
 
     if records != None:
         if records['user_password'] == password:
-            cursor.execute("""select usertype.user_type
+            cursor.execute("""select usertype.user_type, tbl_user.user_email_id, tbl_user.user_username, tbl_user.user_name
              from tbl_user inner join usertype ON tbl_user.user_type_id=usertype.id where user_username = '{0}' """.format(
                 username))
-            usertype = cursor.fetchone()
-            usertype = usertype['user_type']
-            print("----------User Type---------", usertype)
+            userData = cursor.fetchone()
+            print("----------userData---------", userData)
             cursor.close()
-            return str(usertype)
+            # userData = {'infoData': userData}
+            # print("----------userData---------", userData)
+            return str(userData)
         else:
             return "Password wrong"
     else:
@@ -351,9 +352,9 @@ def editProfile():
     password = json_Edit_Profile_Data['password']
     cursor = conn.cursor()
     cursor.execute(
-        "update  tbl_user set user_name = '{0}' ,user_username = '{1}' ,user_email_id = '{2}'"
-        ",user_password = '{3}'  where"
-        " user_email_id = 'select id' ".format(name, username, email_id, password, email_id))
+        "update  tbl_user set user_name = '{0}' ,user_username = '{1}'"
+        ",user_password = '{2}'  where"
+        " user_email_id = '{3}' ".format(name, username, email_id, password, email_id))
     conn.commit()
     cursor.close()
     return "Updated successfully"
