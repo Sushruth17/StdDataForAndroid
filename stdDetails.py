@@ -9,7 +9,6 @@ activeStatus = "active"
 inactiveStatus = "inactive"
 notCreatedStatus = "not created"
 
-
 app = Flask(__name__)
 
 conn = pymysql.connect(host='localhost',
@@ -134,7 +133,8 @@ def signIn():
     if records != None:
         if records['user_password'] == password:
             cursor.execute("""select usertype.user_type
-             from tbl_user inner join usertype ON tbl_user.user_type_id=usertype.id where user_username = '{0}' """.format(username))
+             from tbl_user inner join usertype ON tbl_user.user_type_id=usertype.id where user_username = '{0}' """.format(
+                username))
             usertype = cursor.fetchone()
             usertype = usertype['user_type']
             print("----------User Type---------", usertype)
@@ -174,8 +174,9 @@ def signUp():
     print("----email from db----", email_froom_db)
     print("-----eamilid from app----", email_id)
     if email_id in email_froom_db:
-        cursor.execute("update  tbl_user set user_name = '{0}' ,user_username = '{1}' ,user_password = '{2}' , user_status = '{3}' where"
-                        " user_email_id = '{4}' ".format(name, username, password, activeStatus, email_id))
+        cursor.execute(
+            "update  tbl_user set user_name = '{0}' ,user_username = '{1}' ,user_password = '{2}' , user_status = '{3}' where"
+            " user_email_id = '{4}' ".format(name, username, password, activeStatus, email_id))
         data = cursor.fetchall()
         print(data)
         if len(data) is 0:
@@ -311,6 +312,51 @@ def any_year_topper():
 # from marksinfo inner join studentinfo ON marksinfo.sid=studentinfo.id
 # join branchinfo ON branchinfo.id=studentinfo.Bid
 # where year = 20172018 and branchinfo.Name = "ECE" group by sid order by Sum(marksinfo.marks) DESC"""
+
+
+@app.route('/addUser', methods=['GET', 'POST'])
+def add_user():
+    print("im inside add user")
+    user_data = request.get_json()
+    print("received json data ", user_data)
+    userType = user_data['userType']
+    emailId = user_data['emailId']
+    print("---------userType------------", userType)
+    print("---------BRANCH------------", emailId)
+    cursor = conn.cursor()
+    cursor.execute("""select user_email_id from tbl_user""")
+    email_id_db = cursor.fetchall()
+    email_id_list_db = [i['user_email_id'] for i in email_id_db]
+    print("---------email_id_list_db------------", email_id_list_db)
+    if emailId in email_id_list_db:
+        return "User exists"
+    cursor.execute("""select id from usertype where
+                        user_type = '{0}' """.format(userType))
+    userTypeId = cursor.fetchall()
+    userTypeIdList = [i['id'] for i in userTypeId]
+    print("---------userTypeId------------", userTypeIdList[0])
+    cursor.execute("insert into tbl_user(user_email_id, user_type_id, user_status)"
+                   "values ('{0}', {1} , 'not created') ".format(emailId, userTypeIdList[0]))
+    conn.commit()
+    cursor.close()
+    return "User Created Successfully"
+
+@app.route('/editProfile', methods=['GET', 'POST'])
+def editProfile():
+    json_Edit_Profile_Data = request.get_json()
+    print("received json Sign in data ", json_Edit_Profile_Data)
+    name = json_Edit_Profile_Data['name']
+    username = json_Edit_Profile_Data['username']
+    email_id = json_Edit_Profile_Data['email id']
+    password = json_Edit_Profile_Data['password']
+    cursor = conn.cursor()
+    cursor.execute(
+        "update  tbl_user set user_name = '{0}' ,user_username = '{1}' ,user_email_id = '{2}'"
+        ",user_password = '{3}'  where"
+        " user_email_id = 'select id' ".format(name, username, email_id, password, email_id))
+    conn.commit()
+    cursor.close()
+    return "Updated successfully"
 
 
 if __name__ == '__main__':
