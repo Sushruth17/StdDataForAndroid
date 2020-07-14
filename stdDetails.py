@@ -132,7 +132,7 @@ def signIn():
 
     if records != None:
         if records['user_password'] == password:
-            cursor.execute("""select usertype.user_type, tbl_user.user_email_id, tbl_user.user_username, tbl_user.user_name
+            cursor.execute("""select usertype.user_type, tbl_user.user_email_id, tbl_user.user_username, tbl_user.user_name , tbl_user.user_phone_number
              from tbl_user inner join usertype ON tbl_user.user_type_id=usertype.id where user_username = '{0}' """.format(
                 username))
             userData = cursor.fetchone()
@@ -154,6 +154,7 @@ def signUp():
     name = json_SignIn['name']
     username = json_SignIn['username']
     email_id = json_SignIn['email id']
+    phone_number = json_SignIn['phone number']
     password = json_SignIn['password']
     confirm_password = json_SignIn['confirm password']
     # email_id_pattern = "[a-zA-Z0-9._-]+@[a-z]+\.+[\(com\|org\|net\){3}]+"
@@ -164,7 +165,7 @@ def signUp():
     #     return "Password Does Not Match"
     print(len(username))
     print(len(password))
-    if len(name) == 0 or len(username) == 0 or len(email_id) == 0 or len(password) == 0:
+    if len(name) == 0 or len(username) == 0 or len(email_id) == 0 or len(phone_number) == 0 or len(password) == 0:
         return 'Please fill all the fields'
     cursor = conn.cursor()
     cursor.execute(
@@ -176,8 +177,8 @@ def signUp():
     print("-----eamilid from app----", email_id)
     if email_id in email_froom_db:
         cursor.execute(
-            "update  tbl_user set user_name = '{0}' ,user_username = '{1}' ,user_password = '{2}' , user_status = '{3}' where"
-            " user_email_id = '{4}' ".format(name, username, password, activeStatus, email_id))
+            "update  tbl_user set user_name = '{0}' ,user_username = '{1}', user_phone_number = '{2}' ,user_password = '{3}' , user_status = '{4}' where"
+            " user_email_id = '{5}' ".format(name, username, phone_number, password, activeStatus, email_id))
         data = cursor.fetchall()
         print(data)
         if len(data) is 0:
@@ -348,13 +349,14 @@ def editProfile():
     print("received json Sign in data ", json_Edit_Profile_Data)
     name = json_Edit_Profile_Data['name']
     username = json_Edit_Profile_Data['username']
-    email_id = json_Edit_Profile_Data['email id']
+    phone_number = json_Edit_Profile_Data['phoneNumber']
     password = json_Edit_Profile_Data['password']
+    email_id = json_Edit_Profile_Data['userEmailId']
     cursor = conn.cursor()
     cursor.execute(
-        "update  tbl_user set user_name = '{0}' ,user_username = '{1}'"
-        ",user_password = '{2}'  where"
-        " user_email_id = '{3}' ".format(name, username, email_id, password, email_id))
+        "update  tbl_user set user_name = '{0}' ,user_username = '{1}',"
+        "user_phone_number = '{2}', user_password = '{3}'  where"
+        " user_email_id = '{4}' ".format(name, username, phone_number, password, email_id))
     conn.commit()
     cursor.close()
     return "Updated successfully"
