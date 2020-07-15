@@ -85,6 +85,7 @@ def delete_student(delstd):
     return " Deleted "
 
 
+
 @app.route('/api/add_data', methods=['POST'])
 def addStudent():
     """
@@ -387,6 +388,15 @@ def editProfile():
     cursor.close()
     return "Updated successfully"
 
+
+@app.route('/del/<user>')
+def delete_user(user):
+    cursor = conn.cursor()
+    print("im inside delete user--->", user)
+    cursor.execute("DELETE FROM tbl_user WHERE user_id = {0}".format(user))
+    conn.commit()
+    cursor.close()
+    return "Deleted Successfully"
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5000)
