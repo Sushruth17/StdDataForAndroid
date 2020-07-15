@@ -42,6 +42,21 @@ def main():
     return str(newData)
 
 
+@app.route('/user_data')
+def getUserData():
+    # return "Hello turr %s!" % user
+    cursor = conn.cursor()
+    cursor.execute("select tbl_user.user_id, tbl_user.user_name, tbl_user.user_username, tbl_user.user_email_id,"
+                   " tbl_user.user_phone_number , usertype.user_type from tbl_user"
+                   " inner join usertype ON tbl_user.user_type_id=usertype.id")
+    Data = cursor.fetchall()  # data from database
+    cursor.close()
+    print("send data====---------->", Data)
+    newData = {'infoUser': Data}
+    print("new data--->", str(newData))
+    return str(newData)
+
+
 # GET
 @app.route('/student_data/<name>')
 def search_student(name):
@@ -342,6 +357,7 @@ def add_user():
     conn.commit()
     cursor.close()
     return "User Created Successfully"
+
 
 @app.route('/editProfile', methods=['GET', 'POST'])
 def editProfile():
