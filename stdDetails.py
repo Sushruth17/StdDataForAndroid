@@ -338,25 +338,35 @@ def add_user():
     print("received json data ", user_data)
     userType = user_data['userType']
     emailId = user_data['emailId']
+    userName = user_data['userName']
+    task = user_data['task']
     print("---------userType------------", userType)
-    print("---------BRANCH------------", emailId)
+    print("---------emailId------------", emailId)
+    print("---------task------------", task)
     cursor = conn.cursor()
-    cursor.execute("""select user_email_id from tbl_user""")
-    email_id_db = cursor.fetchall()
-    email_id_list_db = [i['user_email_id'] for i in email_id_db]
-    print("---------email_id_list_db------------", email_id_list_db)
-    if emailId in email_id_list_db:
-        return "User exists"
     cursor.execute("""select id from usertype where
-                        user_type = '{0}' """.format(userType))
+                                           user_type = '{0}' """.format(userType))
     userTypeId = cursor.fetchall()
     userTypeIdList = [i['id'] for i in userTypeId]
     print("---------userTypeId------------", userTypeIdList[0])
-    cursor.execute("insert into tbl_user(user_email_id, user_type_id, user_status)"
-                   "values ('{0}', {1} , 'not created') ".format(emailId, userTypeIdList[0]))
-    conn.commit()
-    cursor.close()
-    return "User Created Successfully"
+    if task == "CREATE":
+        cursor.execute("""select user_email_id from tbl_user""")
+        email_id_db = cursor.fetchall()
+        email_id_list_db = [i['user_email_id'] for i in email_id_db]
+        print("---------email_id_list_db------------", email_id_list_db)
+        if emailId in email_id_list_db:
+            return "User exists"
+        cursor.execute("insert into tbl_user(user_email_id, user_type_id, user_status)"
+                       "values ('{0}', {1} , 'not created') ".format(emailId, userTypeIdList[0]))
+        conn.commit()
+        cursor.close()
+        return "User Created Successfully"
+    elif task == "CHANGE":
+        cursor.execute("""update tbl_user set user_type_id = '{0}' , user_email_id = '{1}' 
+                        where user_username = '{2}' """.format(userTypeIdList[0], emailId, userName))
+        conn.commit()
+        cursor.close()
+        return "User Updated Successfully"
 
 
 @app.route('/editProfile', methods=['GET', 'POST'])
