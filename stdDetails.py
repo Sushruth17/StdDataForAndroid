@@ -42,13 +42,13 @@ def main():
     return str(newData)
 
 
-@app.route('/user_data')
-def getUserData():
+@app.route('/user_data/<status>')
+def getUserData(status):
     # return "Hello turr %s!" % user
     cursor = conn.cursor()
     cursor.execute("select tbl_user.user_id, tbl_user.user_name, tbl_user.user_username, tbl_user.user_email_id,"
                    " tbl_user.user_phone_number , usertype.user_type from tbl_user"
-                   " inner join usertype ON tbl_user.user_type_id=usertype.id")
+                   " inner join usertype ON tbl_user.user_type_id=usertype.id where tbl_user.user_status = '{0}' ".format(status))
     Data = cursor.fetchall()  # data from database
     cursor.close()
     print("send data====---------->", Data)
