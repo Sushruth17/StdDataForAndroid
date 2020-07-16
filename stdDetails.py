@@ -402,14 +402,31 @@ def delete_user(user):
 def get_fee_details(studentid):
     cursor = conn.cursor()
     print("im inside get fee details")
-    cursor.execute(""" select  feesinfo.fees_status, feesinfo.amount_to_be_paid, 
+    cursor.execute(""" select  feesinfo.Sid, feesinfo.fees_status, feesinfo.amount_to_be_paid, 
                         feesinfo.amount_paid, feesinfo.amount_due from feesinfo 
                         inner join studentinfo on studentinfo.id = feesinfo.Sid 
                         where studentinfo.id = '{0}' """.format(studentid))
     feesDetails = cursor.fetchone()
+    cursor.close()
     print("feesDetails-------->",feesDetails)
     return str(feesDetails)
 
+@app.route('/updateFees', methods=['GET', 'POST'])
+def updateFeesData():
+    jsonUpdateFeesData = request.get_json()
+    print("received json Update Fees Data ", jsonUpdateFeesData)
+    np_amountToBePaid = jsonUpdateFeesData['np_amountToBePaid']
+    np_amountPaid = jsonUpdateFeesData['np_amountPaid']
+    np_amountDue = jsonUpdateFeesData['np_amountDue']
+    feesStatus = jsonUpdateFeesData['feesStatus']
+    studentId = jsonUpdateFeesData['studentId']
+    cursor = conn.cursor()
+    cursor.execute(""" update feesinfo set amount_to_be_paid = '{0}', amount_paid = '{1}', amount_due = '{2}' ,
+                    fees_status = '{3}' where Sid = '{4}' """.format(np_amountToBePaid, np_amountPaid,
+                                                                      np_amountDue, feesStatus, studentId))
+    conn.commit()
+    cursor.close()
+    return "updated successfully"
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5000)
