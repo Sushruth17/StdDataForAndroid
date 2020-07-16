@@ -398,5 +398,18 @@ def delete_user(user):
     cursor.close()
     return "Deleted Successfully"
 
+@app.route('/stdfees/<studentid>')
+def get_fee_details(studentid):
+    cursor = conn.cursor()
+    print("im inside get fee details")
+    cursor.execute(""" select  feesinfo.fees_status, feesinfo.amount_to_be_paid, 
+                        feesinfo.amount_paid, feesinfo.amount_due from feesinfo 
+                        inner join studentinfo on studentinfo.id = feesinfo.Sid 
+                        where studentinfo.id = '{0}' """.format(studentid))
+    feesDetails = cursor.fetchone()
+    print("feesDetails-------->",feesDetails)
+    return str(feesDetails)
+
+
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5000)
