@@ -47,7 +47,7 @@ def getUserData(status):
     # return "Hello turr %s!" % user
     cursor = conn.cursor()
     cursor.execute("select tbl_user.user_id, tbl_user.user_name, tbl_user.user_username, tbl_user.user_email_id,"
-                   " tbl_user.user_phone_number , usertype.user_type from tbl_user"
+                   " tbl_user.user_phone_number , usertype.user_type ,tbl_user.user_status from tbl_user"
                    " inner join usertype ON tbl_user.user_type_id=usertype.id where tbl_user.user_status = '{0}' ".format(status))
     Data = cursor.fetchall()  # data from database
     cursor.close()
@@ -148,7 +148,7 @@ def signIn():
 
     if records != None:
         if records['user_password'] == password:
-            cursor.execute("""select usertype.user_type, tbl_user.user_email_id, tbl_user.user_username, tbl_user.user_name , tbl_user.user_phone_number
+            cursor.execute("""select usertype.user_type, tbl_user.user_email_id, tbl_user.user_username, tbl_user.user_name , tbl_user.user_phone_number, tbl_user.user_status
              from tbl_user inner join usertype ON tbl_user.user_type_id=usertype.id where user_username = '{0}' """.format(
                 username))
             userData = cursor.fetchone()
