@@ -402,10 +402,9 @@ def delete_user(user):
 def get_fee_details(studentid):
     cursor = conn.cursor()
     print("im inside get fee details")
-    cursor.execute(""" select  feesinfo.Sid, feesinfo.fees_status, feesinfo.amount_to_be_paid, 
-                        feesinfo.amount_paid, feesinfo.amount_due from feesinfo 
-                        inner join studentinfo on studentinfo.id = feesinfo.Sid 
-                        where studentinfo.id = '{0}' """.format(studentid))
+    cursor.execute("""select  feesinfo.Sid, feesinfo.fees_status, feesinfo.actual_fee, feesinfo.fee_concession, 
+    feesinfo.amount_to_be_paid, feesinfo.amount_paid, feesinfo.amount_due from feesinfo inner join studentinfo on 
+    studentinfo.id = feesinfo.Sid where studentinfo.id = '{0}' """.format(studentid))
     feesDetails = cursor.fetchone()
     cursor.close()
     print("feesDetails-------->",feesDetails)
@@ -418,11 +417,13 @@ def updateFeesData():
     np_amountToBePaid = jsonUpdateFeesData['np_amountToBePaid']
     np_amountPaid = jsonUpdateFeesData['np_amountPaid']
     np_amountDue = jsonUpdateFeesData['np_amountDue']
+    feeConcession = jsonUpdateFeesData['feeConcession']
     feesStatus = jsonUpdateFeesData['feesStatus']
     studentId = jsonUpdateFeesData['studentId']
     cursor = conn.cursor()
-    cursor.execute(""" update feesinfo set amount_to_be_paid = '{0}', amount_paid = '{1}', amount_due = '{2}' ,
-                    fees_status = '{3}' where Sid = '{4}' """.format(np_amountToBePaid, np_amountPaid,
+    cursor.execute("""update feesinfo set fee_concession = '{0}' , amount_to_be_paid = '{1}', amount_paid = '{2}', 
+    amount_due = '{3}' , fees_status = '{4}' where Sid = '{5}' """.format(feeConcession, np_amountToBePaid,
+                                                                          np_amountPaid,
                                                                       np_amountDue, feesStatus, studentId))
     conn.commit()
     cursor.close()
