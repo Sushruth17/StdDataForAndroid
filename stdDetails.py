@@ -33,7 +33,9 @@ def index():
 def main():
     # return "Hello turr %s!" % user
     cursor = conn.cursor()
-    cursor.execute("select id,name,address,parentname,age from studentinfo")
+    cursor.execute("select studentinfo.id,studentinfo.name, studentinfo.address, studentinfo.parentname, "
+                   "studentinfo.age, branchinfo.name as branch from studentinfo "
+                   "inner join branchinfo where studentinfo.Bid = branchinfo.id")
     Data = cursor.fetchall()  # data from database
     cursor.close()
     print("send data====---------->", Data)
@@ -48,7 +50,8 @@ def getUserData(status):
     cursor = conn.cursor()
     cursor.execute("select tbl_user.user_id, tbl_user.user_name, tbl_user.user_username, tbl_user.user_email_id,"
                    " tbl_user.user_phone_number , usertype.user_type ,tbl_user.user_status from tbl_user"
-                   " inner join usertype ON tbl_user.user_type_id=usertype.id where tbl_user.user_status = '{0}' ".format(status))
+                   " inner join usertype ON tbl_user.user_type_id=usertype.id where tbl_user.user_status = '{0}' ".format(
+        status))
     Data = cursor.fetchall()  # data from database
     cursor.close()
     print("send data====---------->", Data)
@@ -85,7 +88,6 @@ def delete_student(delstd):
     return " Deleted "
 
 
-
 @app.route('/api/add_data', methods=['POST'])
 def addStudent():
     """
@@ -97,11 +99,11 @@ def addStudent():
     if len(json['name']) == 0:
         return jsonify({'error': 'invalid input'})
     cursor = conn.cursor()
-    cursor.execute("insert into studentinfo(Name,Address,ParentName,Age)"
-                   "values('{0}', '{1}', '{2}','{3}')".format(json['name']
+    cursor.execute("insert into studentinfo(Name,Address,ParentName,Age,Bid)"
+                   "values('{0}', '{1}', '{2}','{3}',(select id from branchinfo where Name = '{4}'))".format(json['name']
                                                               , json['address']
                                                               , json['parentname']
-                                                              , json['age']))
+                                                              , json['age'], json['branch']))
     conn.commit()
     cursor.close()
     return 'Added Suvccessfully'
@@ -114,10 +116,11 @@ def editStudent():
     if len(json_edit['name']) == 0:
         return jsonify({'error': 'invalid input'})
     cursor = conn.cursor()
-    cursor.execute("""UPDATE studentinfo SET Name = %s ,Age = %s ,ParentName = %s ,Address = %s WHERE id = %s """,
+    cursor.execute("""UPDATE studentinfo SET Name = %s ,Age = %s ,ParentName = %s ,Address = %s ,
+    Bid = (select id from branchinfo where Name = %s) WHERE id = %s """,
                    (json_edit['name'], json_edit['age']
                     , json_edit['parentname']
-                    , json_edit['address'], json_edit['id']))
+                    , json_edit['address'], json_edit['branch'], json_edit['id']))
 
     conn.commit()
     cursor.close()
@@ -398,6 +401,7 @@ def delete_user(user):
     cursor.close()
     return "Deleted Successfully"
 
+
 @app.route('/stdfees/<studentid>')
 def get_fee_details(studentid):
     cursor = conn.cursor()
@@ -407,8 +411,9 @@ def get_fee_details(studentid):
     studentinfo.id = feesinfo.Sid where studentinfo.id = '{0}' """.format(studentid))
     feesDetails = cursor.fetchone()
     cursor.close()
-    print("feesDetails-------->",feesDetails)
+    print("feesDetails-------->", feesDetails)
     return str(feesDetails)
+
 
 @app.route('/updateFees', methods=['GET', 'POST'])
 def updateFeesData():
@@ -424,10 +429,36 @@ def updateFeesData():
     cursor.execute("""update feesinfo set fee_concession = '{0}' , amount_to_be_paid = '{1}', amount_paid = '{2}', 
     amount_due = '{3}' , fees_status = '{4}' where Sid = '{5}' """.format(feeConcession, np_amountToBePaid,
                                                                           np_amountPaid,
-                                                                      np_amountDue, feesStatus, studentId))
+                                                                          np_amountDue, feesStatus, studentId))
     conn.commit()
     cursor.close()
     return "updated successfully"
+
+
+@app.route('/addFee', methods=['GET', 'POST'])
+def addFeeData():
+    jsonAddFeeData = request.get_json()
+    print("received json ADD Fees Data ", jsonAddFeeData)
+    studentId = jsonAddFeeData['StudentId']
+    actualFee = jsonAddFeeData['ActualFee']
+    concession = jsonAddFeeData['Concession']
+    amountTBePaid = jsonAddFeeData['AmountTBePaid']
+    amountPaid = jsonAddFeeData['AmountPaid']
+    amountDue = jsonAddFeeData['AmountDue']
+    if amountDue == "0":
+        feeStatus = "Paid"
+    else:
+        feeStatus = "Not Paid"
+    cursor = conn.cursor()
+    cursor.execute("insert into feesinfo(fees_status,actual_fee, fee_concession, amount_to_be_paid, amount_paid, "
+                   "amount_due, Sid) "
+                   "values('{0}', '{1}', '{2}', '{3}', '{4}', '{5}' ,'{6}')".format(feeStatus, actualFee, concession,
+                                                                                    amountTBePaid,
+                                                                                    amountPaid, amountDue, studentId))
+    conn.commit()
+    cursor.close()
+    return "Added Successfully"
+
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5000)
