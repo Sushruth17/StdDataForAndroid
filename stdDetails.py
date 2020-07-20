@@ -196,7 +196,8 @@ def signUp():
     print("-----eamilid from app----", email_id)
     if email_id in email_froom_db:
         cursor.execute(
-            "update  tbl_user set user_name = '{0}' ,user_username = '{1}', user_phone_number = '{2}' ,user_password = '{3}' , user_status = '{4}' where"
+            "update  tbl_user set user_name = '{0}' ,user_username = '{1}', user_phone_number = '{2}' ,user_password "
+            "= '{3}' , user_status = '{4}' where "
             " user_email_id = '{5}' ".format(name, username, phone_number, password, activeStatus, email_id))
         data = cursor.fetchall()
         print(data)
@@ -458,6 +459,23 @@ def addFeeData():
     conn.commit()
     cursor.close()
     return "Added Successfully"
+
+
+@app.route('/passpercent/<year>')
+def get_passpercentage(year):
+    cursor = conn.cursor()
+    cursor.execute("""SELECT Sid from marksinfo WHERE year = '{0}' GROUP by Sid""".format(year))
+    all_students = cursor.fetchall()
+    print("-----------all_students------------",len(all_students))
+    cursor.execute("""SELECT Sid from marksinfo WHERE Marks < 35 and year = '{0}' GROUP by Sid""".format(year))
+    failed_students = cursor.fetchall()
+    print("-----------failed_students------------",failed_students)
+    passed_student = len(all_students) - len(failed_students)
+    passPercentage = int((passed_student/len(all_students))*100)
+    print("------passPercentage-----",passPercentage)
+    cursor.close()
+    newData = {'passPercentage': passPercentage}
+    return str(newData)
 
 
 if __name__ == '__main__':
